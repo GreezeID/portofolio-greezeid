@@ -124,21 +124,74 @@
 
   /* SECTIONS - tidak ada background berbeda agar tidak terlihat garis pemisah */
   section { position: relative; z-index: 2; background: transparent !important; }
+  /* ── Scroll reveal: fade-in + slide-up/left/right ────────────────────
+     Semua elemen mulai invisible, muncul saat masuk viewport.
+     will-change: opacity, transform → GPU composited, no jank ── */
+  .reveal, .reveal-left, .reveal-right {
+    will-change: opacity, transform;
+  }
   .reveal {
-    opacity: 0; transform: translateY(40px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.55s cubic-bezier(0.16,1,0.3,1),
+                transform 0.55s cubic-bezier(0.16,1,0.3,1);
   }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
   .reveal-left {
-    opacity: 0; transform: translateX(-40px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
+    opacity: 0;
+    transform: translateX(-36px);
+    transition: opacity 0.55s cubic-bezier(0.16,1,0.3,1),
+                transform 0.55s cubic-bezier(0.16,1,0.3,1);
   }
-  .reveal-left.visible { opacity: 1; transform: translateX(0); }
+  .reveal-left.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
   .reveal-right {
-    opacity: 0; transform: translateX(40px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
+    opacity: 0;
+    transform: translateX(36px);
+    transition: opacity 0.55s cubic-bezier(0.16,1,0.3,1),
+                transform 0.55s cubic-bezier(0.16,1,0.3,1);
   }
-  .reveal-right.visible { opacity: 1; transform: translateX(0); }
+  .reveal-right.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  /* Stagger: setiap child di dalam grid/flex muncul berurutan */
+  .reveal-stagger > * {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.5s cubic-bezier(0.16,1,0.3,1),
+                transform 0.5s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal-stagger.visible > *:nth-child(1)  { transition-delay: 0.05s; opacity:1; transform:none; }
+  .reveal-stagger.visible > *:nth-child(2)  { transition-delay: 0.12s; opacity:1; transform:none; }
+  .reveal-stagger.visible > *:nth-child(3)  { transition-delay: 0.19s; opacity:1; transform:none; }
+  .reveal-stagger.visible > *:nth-child(4)  { transition-delay: 0.26s; opacity:1; transform:none; }
+  .reveal-stagger.visible > *:nth-child(5)  { transition-delay: 0.33s; opacity:1; transform:none; }
+  .reveal-stagger.visible > *:nth-child(6)  { transition-delay: 0.40s; opacity:1; transform:none; }
+  .reveal-stagger.visible > *:nth-child(n+7){ transition-delay: 0.47s; opacity:1; transform:none; }
+
+  /* Fade-in murni untuk elemen yang tidak butuh gerak */
+  .reveal-fade {
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    will-change: opacity;
+  }
+  .reveal-fade.visible { opacity: 1; }
+
+  /* Scale-in untuk stat-card dan elemen compact */
+  .reveal-scale {
+    opacity: 0;
+    transform: scale(0.94);
+    transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+    will-change: opacity, transform;
+  }
+  .reveal-scale.visible { opacity: 1; transform: scale(1); }
 
   /* GLOWING LINES */
   .glow-line-h {
@@ -488,12 +541,57 @@
   /* SEPARATOR — dihapus agar tidak ada garis pemisah antar section */
   /* .sep, .sep-line, .sep-dot sudah dinonaktifkan */
 
+  /* Mobile breakpoint: tampilkan hamburger, sembunyikan nav links default */
   @media (max-width: 768px) {
     .nav-links { display: none; }
-    .nav-links.open { display: flex; flex-direction: column; position: fixed; top: 64px; left: 0; right: 0; background: rgba(2,11,24,0.97); padding: 2rem; gap: 1.5rem; border-bottom: 1px solid rgba(0,212,255,0.1); z-index: 99; }
+
+    /* Nav menu saat terbuka: kolom vertikal dengan tema toggle di dalamnya */
+    .nav-links.open {
+      display: flex; flex-direction: column;
+      position: fixed; top: 64px; left: 0; right: 0;
+      background: rgba(2,11,24,0.97);  /* dark default */
+      padding: 1.5rem 2rem 2rem;
+      gap: 1.2rem;
+      border-bottom: 1px solid rgba(0,212,255,0.1);
+      z-index: 99;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
     .hamburger { display: flex; }
     body { cursor: auto; }
     #cursor, #cursor-ring { display: none; }
+
+    /* Sembunyikan theme toggle desktop saat mobile */
+    #themeToggle { display: none !important; }
+    /* mobileThemeToggle di dalam nav-links sudah inline display:flex
+       — tidak perlu override lagi, pasti terlihat saat menu terbuka */
+  }
+
+  /* Desktop: sembunyikan panel mobile sepenuhnya */
+  @media (min-width: 769px) {
+    #mobileThemePanel { display: none !important; }
+    /* Hapus mobileThemeToggle lama jika masih ada di DOM */
+    #mobileThemeToggle { display: none !important; }
+  }
+
+  /* Animasi slide down untuk panel tema mobile */
+  @keyframes panelSlide {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Light mode: override warna panel mobile */
+  body.light-mode #mobileThemePanel {
+    background: rgba(240,245,255,0.98) !important;
+    border-bottom-color: rgba(0,60,150,0.1);
+  }
+  body.light-mode #mbtnDark,
+  body.light-mode #mbtnLight,
+  body.light-mode #mbtnAuto {
+    background: rgba(0,60,150,0.05);
+    border-color: rgba(0,60,150,0.18);
+    color: #0057a8;
   }
 </style>
 </head>
@@ -561,6 +659,59 @@
   </div>
 </nav>
 
+<!-- MOBILE THEME PANEL — fixed, di luar nav-links agar tidak ter-hide display:none
+     Dikontrol toggleMenu() secara langsung via style.display -->
+<div id="mobileThemePanel" style="
+  display:none; position:fixed; top:64px; left:0; right:0; z-index:98;
+  background:rgba(2,11,24,0.97); backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(0,212,255,0.12);
+  padding:0.85rem 1.5rem 1.1rem;
+  flex-direction:column; gap:0.5rem;
+  animation:panelSlide 0.25s ease;">
+
+  <span style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;
+               letter-spacing:0.2em;text-transform:uppercase;
+               color:rgba(0,212,255,0.4);">// Tema Tampilan</span>
+
+  <div style="display:flex;gap:0.5rem;">
+
+    <button id="mbtnDark" onclick="setTheme('dark');closeMobilePanel()"
+      style="flex:1;display:flex;align-items:center;justify-content:center;gap:0.4rem;
+             padding:0.55rem 0.4rem;border-radius:8px;
+             background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.18);
+             font-family:'Orbitron',sans-serif;font-size:0.62rem;font-weight:700;
+             color:rgba(0,212,255,0.7);cursor:pointer;transition:all 0.2s;
+             -webkit-tap-highlight-color:transparent;touch-action:manipulation;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      Dark
+    </button>
+
+    <button id="mbtnLight" onclick="setTheme('light');closeMobilePanel()"
+      style="flex:1;display:flex;align-items:center;justify-content:center;gap:0.4rem;
+             padding:0.55rem 0.4rem;border-radius:8px;
+             background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.18);
+             font-family:'Orbitron',sans-serif;font-size:0.62rem;font-weight:700;
+             color:rgba(0,212,255,0.7);cursor:pointer;transition:all 0.2s;
+             -webkit-tap-highlight-color:transparent;touch-action:manipulation;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      Light
+    </button>
+
+    <button id="mbtnAuto" onclick="setTheme('auto');closeMobilePanel()"
+      style="flex:1;display:flex;align-items:center;justify-content:center;gap:0.4rem;
+             padding:0.55rem 0.4rem;border-radius:8px;
+             background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.18);
+             font-family:'Orbitron',sans-serif;font-size:0.62rem;font-weight:700;
+             color:rgba(0,212,255,0.7);cursor:pointer;transition:all 0.2s;
+             -webkit-tap-highlight-color:transparent;touch-action:manipulation;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+      Default
+    </button>
+
+  </div>
+</div>
+
 <!-- HERO -->
 <section id="hero">
   <!-- Orbs -->
@@ -588,24 +739,24 @@
       <a href="#contact" class="btn-outline hover-target">Hubungi Saya</a>
     </div>
 
-    <div class="glow-line-h reveal" style="margin:3rem auto;max-width:300px;transition-delay:0.6s;"></div>
+    <div class="glow-line-h reveal-fade" style="margin:3rem auto;max-width:300px;transition-delay:0.6s;"></div>
 
-    <!-- Stats: project count, years exp, vision, visitor counter -->
-    <div class="reveal" style="transition-delay:0.7s;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;max-width:640px;margin:0 auto;">
-      <div class="stat-card hover-target">
+    <!-- Stats: 4 kolom desktop, 2×2 di mobile via responsive class -->
+    <div class="reveal stats-grid" style="transition-delay:0.7s;display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;max-width:640px;margin:0 auto;">
+      <div class="stat-card hover-target reveal-scale">
         <div class="stat-num">7+</div>
         <div class="stat-label">Projects</div>
       </div>
-      <div class="stat-card hover-target">
+      <div class="stat-card hover-target reveal-scale">
         <div class="stat-num">4+</div>
         <div class="stat-label">Yrs Exp</div>
       </div>
-      <div class="stat-card hover-target">
+      <div class="stat-card hover-target reveal-scale">
         <div class="stat-num">∞</div>
         <div class="stat-label">Vision</div>
       </div>
       <!-- Visitor counter — angka disimpan di localStorage -->
-      <div class="stat-card hover-target" id="visitorCard">
+      <div class="stat-card hover-target reveal-scale" id="visitorCard">
         <div class="stat-num" id="visitorNum">—</div>
         <div class="stat-label">Visitors</div>
       </div>
@@ -641,7 +792,7 @@
 
       <!-- Right - Info -->
       <div class="reveal-right" style="display:flex;flex-direction:column;gap:1rem;">
-        <div style="border:1px solid rgba(0,212,255,0.12);background:rgba(5,15,30,0.5);border-radius:4px;padding:1.2rem 1.5rem;">
+        <div class="about-info-card reveal" style="border:1px solid rgba(0,212,255,0.12);background:rgba(5,15,30,0.5);border-radius:4px;padding:1.2rem 1.5rem;">
           <div class="section-tag" style="font-size:0.65rem;margin-bottom:0.6rem;">Focus Area</div>
           <div style="display:flex;flex-wrap:wrap;gap:0.5rem;">
             <span class="tech-badge">React.js</span>
@@ -653,11 +804,11 @@
             <span class="tech-badge">MySQL</span>
           </div>
         </div>
-        <div style="border:1px solid rgba(0,212,255,0.12);background:rgba(5,15,30,0.5);border-radius:4px;padding:1.2rem 1.5rem;">
+        <div class="about-info-card reveal" style="border:1px solid rgba(0,212,255,0.12);background:rgba(5,15,30,0.5);border-radius:4px;padding:1.2rem 1.5rem;transition-delay:0.1s;">
           <div class="section-tag" style="font-size:0.65rem;margin-bottom:0.6rem;">Ecosystem</div>
           <p style="font-size:0.95rem;color:rgba(180,220,240,0.65);line-height:1.8;">DipaNusantaraTechnology — membangun ekosistem server Minecraft dengan standar profesional, sistem stabil, dan komunitas yang solid.</p>
         </div>
-        <div style="border:1px solid rgba(0,212,255,0.12);background:rgba(5,15,30,0.5);border-radius:4px;padding:1.2rem 1.5rem;">
+        <div class="about-info-card reveal" style="border:1px solid rgba(0,212,255,0.12);background:rgba(5,15,30,0.5);border-radius:4px;padding:1.2rem 1.5rem;transition-delay:0.2s;">
           <div class="section-tag" style="font-size:0.65rem;margin-bottom:0.6rem;">Status</div>
           <div style="display:flex;align-items:center;gap:0.5rem;">
             <span style="width:8px;height:8px;background:#10b981;border-radius:50%;display:inline-block;box-shadow:0 0 8px #10b981;animation:pulse 2s infinite;"></span>
@@ -673,7 +824,7 @@
         <div class="section-tag">// Career Vault</div>
         <h3 style="font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:700;color:#fff;">Jejak <span style="background:linear-gradient(135deg,var(--cyan-glow),var(--blue-electric));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Karier</span></h3>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">
+      <div class="reveal-stagger" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;">
 
         <div class="career-item reveal hover-target" style="transition-delay:0.05s;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.4rem;">
@@ -720,7 +871,17 @@
           <p style="font-size:0.8rem;color:rgba(180,220,240,0.5);margin-top:0.4rem;font-family:'JetBrains Mono',monospace;">Minecraft Server · Komunitas banyak yang puas</p>
         </div>
 
+        <!-- Cihuy Network: Freelance Developer, tema server PVP + MMORPG -->
         <div class="career-item reveal hover-target" style="transition-delay:0.3s;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.4rem;">
+            <div class="career-name">Cihuy Network</div>
+            <span class="career-status status-left">Freelance</span>
+          </div>
+          <div class="career-role">Freelance Developer</div>
+          <p style="font-size:0.8rem;color:rgba(180,220,240,0.5);margin-top:0.4rem;font-family:'JetBrains Mono',monospace;">Server PVP · Senjata MMORPG &amp; Brutal Legend</p>
+        </div>
+
+        <div class="career-item reveal hover-target" style="transition-delay:0.35s;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.4rem;">
             <div class="career-name">DipaNusantara Roleplay</div>
             <span class="career-status status-active">Aktif ⚡</span>
@@ -851,152 +1012,260 @@
   </div>
 </section>
 
-<!-- SKILLS -->
+<!-- SKILLS — satu kolom penuh, logo inline di kiri nama skill -->
 <section id="skills" style="padding:6rem 2rem;">
-  <div style="max-width:1100px;margin:0 auto;">
+  <div style="max-width:780px;margin:0 auto;">
     <div class="reveal" style="margin-bottom:3rem;">
       <div class="section-tag">// 03 — Skills</div>
       <h2 class="section-title">Tech <span>Arsenal</span></h2>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:3rem;" class="responsive-grid">
-      <!-- Skill bars -->
-      <div style="display:flex;flex-direction:column;gap:1rem;">
-        <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.05s;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;">
-            <span style="font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">Java (Minecraft Plugin)</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">85%</span>
-          </div>
-          <div class="skill-bar-track"><div class="skill-bar-fill" data-width="85"></div></div>
+    <!-- Setiap baris: [logo 28px] [nama skill] ... [persentase] -->
+    <div style="display:flex;flex-direction:column;gap:0.85rem;">
+
+      <!-- 1 — Server Infrastructure 87% -->
+      <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.05s;">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
+          <!-- Minecraft grass block icon (inline SVG) -->
+          <span style="width:22px;height:22px;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 4px rgba(70,230,90,0.7));" title="Minecraft">
+            <svg width="22" height="22" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="14" y="18" width="36" height="36" rx="4" fill="#2ecc71"/>
+              <rect x="14" y="18" width="36" height="10" rx="4" fill="#27ae60"/>
+              <rect x="14" y="28" width="10" height="26" fill="#22c55e"/>
+              <rect x="24" y="28" width="10" height="26" fill="#16a34a"/>
+              <rect x="34" y="28" width="14" height="26" fill="#1fae5a"/>
+              <path d="M14 28 L50 28" stroke="#14532d" stroke-width="2" opacity="0.7"/>
+              <path d="M22 18 L50 28" stroke="#0f3d22" stroke-width="2" opacity="0.45"/>
+              <path d="M14 18 L22 18" stroke="#0f3d22" stroke-width="2" opacity="0.45"/>
+              <path d="M14 18 L14 54" stroke="#0f3d22" stroke-width="2" opacity="0.35"/>
+            </svg>
+          </span>
+          <span style="flex:1;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">Server Infrastructure</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">87%</span>
         </div>
-        <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.1s;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;">
-            <span style="font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">Server Infrastructure</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">87%</span>
-          </div>
-          <div class="skill-bar-track"><div class="skill-bar-fill" data-width="87"></div></div>
-        </div>
-        <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.15s;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;">
-            <span style="font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">React.js</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">40%</span>
-          </div>
-          <div class="skill-bar-track"><div class="skill-bar-fill" data-width="40"></div></div>
-        </div>
-        <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.2s;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;">
-            <span style="font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">Tailwind CSS</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">38%</span>
-          </div>
-          <div class="skill-bar-track"><div class="skill-bar-fill" data-width="38"></div></div>
-        </div>
-        <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.25s;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;">
-            <span style="font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">MySQL / Database</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">35%</span>
-          </div>
-          <div class="skill-bar-track"><div class="skill-bar-fill" data-width="35"></div></div>
-        </div>
-        <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.3s;">
-          <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;">
-            <span style="font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">Node.js / Express</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">30%</span>
-          </div>
-          <div class="skill-bar-track"><div class="skill-bar-fill" data-width="30"></div></div>
-        </div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" data-width="87"></div></div>
       </div>
 
-      <!-- Skill icons -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.75rem;" class="reveal-right">
-
-        <!-- React -->
-        <div class="skill-icon-grid hover-target">
-          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/react/react-original.svg" style="width:36px;height:36px;filter:drop-shadow(0 0 6px rgba(97,218,251,0.6));" alt="React">
-          <div class="skill-name">React</div>
+      <!-- 2 — Java 85% -->
+      <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.1s;">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
+          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original.svg"
+               width="22" height="22" loading="lazy" alt="Java"
+               style="width:22px;height:22px;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(248,152,32,0.7));"
+               onerror="imgFail(this,'#f89820','#e55a00','JV')">
+          <span style="flex:1;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">Java (Minecraft Plugin)</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">85%</span>
         </div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" data-width="85"></div></div>
+      </div>
 
-        <!-- Tailwind -->
-        <div class="skill-icon-grid hover-target">
-          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg" style="width:36px;height:36px;filter:drop-shadow(0 0 6px rgba(56,189,248,0.6));" alt="Tailwind">
-          <div class="skill-name">Tailwind</div>
+      <!-- 3 — LeafMC 48% — logo dari leafmc.one/favicon -->
+      <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.15s;">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
+          <img src="https://www.leafmc.one/logo.svg"
+               width="22" height="22" loading="lazy" alt="LeafMC"
+               style="width:22px;height:22px;flex-shrink:0;border-radius:4px;filter:drop-shadow(0 0 4px rgba(80,200,80,0.7));"
+               onerror="imgFailMulti(this,['https://www.leafmc.one/favicon.ico','https://avatars.githubusercontent.com/u/136085379?s=48'],'#22c55e','#16a34a','LF')">
+          <span style="flex:1;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">LeafMC</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">48%</span>
         </div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" data-width="48"></div></div>
+      </div>
 
-        <!-- Java -->
-        <div class="skill-icon-grid hover-target">
-          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" style="width:36px;height:36px;filter:drop-shadow(0 0 6px rgba(248,152,32,0.6));" alt="Java">
-          <div class="skill-name">Java</div>
+      <!-- 4 — React.js 36% -->
+      <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.2s;">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
+          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg"
+               width="22" height="22" loading="lazy" alt="React.js"
+               style="width:22px;height:22px;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(97,218,251,0.7));"
+               onerror="imgFail(this,'#61dafb','#21a1c4','RE')">
+          <span style="flex:1;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">React.js</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">36%</span>
         </div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" data-width="36"></div></div>
+      </div>
 
-        <!-- Node.js -->
-        <div class="skill-icon-grid hover-target">
-          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" style="width:36px;height:36px;filter:drop-shadow(0 0 6px rgba(104,160,99,0.7));" alt="Node.js">
-          <div class="skill-name">Node.js</div>
+      <!-- 5 — MySQL 33% -->
+      <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.25s;">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
+          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/mysql/mysql-original.svg"
+               width="22" height="22" loading="lazy" alt="MySQL"
+               style="width:22px;height:22px;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(0,117,143,0.7));"
+               onerror="imgFail(this,'#00758f','#f29111','MY')">
+          <span style="flex:1;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">MySQL / Database</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">33%</span>
         </div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" data-width="33"></div></div>
+      </div>
 
-        <!-- MySQL -->
-        <div class="skill-icon-grid hover-target">
-          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg" style="width:36px;height:36px;filter:drop-shadow(0 0 6px rgba(0,117,143,0.7));" alt="MySQL">
-          <div class="skill-name">MySQL</div>
+      <!-- 6 — Tailwind CSS 22% -->
+      <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.3s;">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
+          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg"
+               width="22" height="22" loading="lazy" alt="Tailwind CSS"
+               style="width:22px;height:22px;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(56,189,248,0.7));"
+               onerror="imgFail(this,'#38bdf8','#0369a1','TW')">
+          <span style="flex:1;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">Tailwind CSS</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">22%</span>
         </div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" data-width="22"></div></div>
+      </div>
 
-        <!-- Spigot (custom SVG icon) -->
-        <div class="skill-icon-grid hover-target">
-          <img src="https://static.spigotmc.org/img/spigot.png" style="width:36px;height:36px;object-fit:contain;filter:drop-shadow(0 0 6px rgba(255,140,0,0.6));" alt="Spigot"
-               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-          <div style="display:none;width:36px;height:36px;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff8c00,#e55a00);border-radius:6px;font-family:'Orbitron',sans-serif;font-size:0.7rem;font-weight:700;color:#fff;">SP</div>
-          <div class="skill-name">Spigot</div>
+      <!-- 7 — Node.js 22% -->
+      <div class="skill-bar-wrap reveal hover-target" style="transition-delay:0.35s;">
+        <div style="display:flex;align-items:center;gap:0.6rem;margin-bottom:0.35rem;">
+          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg"
+               width="22" height="22" loading="lazy" alt="Node.js"
+               style="width:22px;height:22px;flex-shrink:0;filter:drop-shadow(0 0 4px rgba(104,160,99,0.7));"
+               onerror="imgFail(this,'#68a063','#3d7a35','NJ')">
+          <span style="flex:1;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:600;color:#fff;">Node.js / Express</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--cyan-glow);">22%</span>
         </div>
+        <div class="skill-bar-track"><div class="skill-bar-fill" data-width="22"></div></div>
+      </div>
+
+      <!-- Divider tipis -->
+      <div style="height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.15),transparent);margin:0.5rem 0;"></div>
+
+      <!-- Extra tools: PaperMC, Spigot, GitHub — baris ikon kecil tanpa bar -->
+      <div class="reveal" style="transition-delay:0.4s;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:rgba(0,212,255,0.4);letter-spacing:0.1em;">// tools</span>
 
         <!-- PaperMC -->
-        <div class="skill-icon-grid hover-target">
-          <img src="https://raw.githubusercontent.com/PaperMC/papermc.io/main/public/favicon.png" style="width:36px;height:36px;object-fit:contain;border-radius:6px;filter:drop-shadow(0 0 6px rgba(0,192,140,0.7));" alt="PaperMC"
-               onerror="this.src='https://avatars.githubusercontent.com/u/7608950?s=64';">
-          <div class="skill-name">PaperMC</div>
+        <div class="hover-target" title="PaperMC"
+             style="display:flex;align-items:center;gap:0.35rem;border:1px solid rgba(0,212,255,0.12);border-radius:6px;padding:0.3rem 0.7rem;background:rgba(0,212,255,0.03);transition:all 0.25s;"
+             onmouseover="this.style.borderColor='rgba(0,212,255,0.35)'"
+             onmouseout="this.style.borderColor='rgba(0,212,255,0.12)'">
+          <img src="https://docs.papermc.io/img/paper.png" width="16" height="16" loading="lazy" alt="PaperMC"
+               style="width:16px;height:16px;object-fit:contain;border-radius:3px;"
+               onerror="imgFailMulti(this,['https://avatars.githubusercontent.com/u/7608950?s=32'],'#00c08c','#007a5e','PM')">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:rgba(0,212,255,0.65);">PaperMC</span>
+        </div>
+
+        <!-- SpigotMC -->
+        <div class="hover-target" title="SpigotMC"
+             style="display:flex;align-items:center;gap:0.35rem;border:1px solid rgba(0,212,255,0.12);border-radius:6px;padding:0.3rem 0.7rem;background:rgba(0,212,255,0.03);transition:all 0.25s;"
+             onmouseover="this.style.borderColor='rgba(0,212,255,0.35)'"
+             onmouseout="this.style.borderColor='rgba(0,212,255,0.12)'">
+          <img src="https://www.spigotmc.org/favicon.ico" width="16" height="16" loading="lazy" alt="SpigotMC"
+               style="width:16px;height:16px;object-fit:contain;border-radius:3px;"
+               onerror="imgFailMulti(this,['https://cdn.simpleicons.org/spigotmc/FF8C00'],'#ff8c00','#e55a00','SP')">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:rgba(0,212,255,0.65);">SpigotMC</span>
         </div>
 
         <!-- GitHub -->
-        <div class="skill-icon-grid hover-target">
-          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/github/github-original.svg" style="width:36px;height:36px;filter:invert(1) drop-shadow(0 0 6px rgba(255,255,255,0.3));" alt="GitHub">
-          <div class="skill-name">GitHub</div>
+        <div class="hover-target" title="GitHub"
+             style="display:flex;align-items:center;gap:0.35rem;border:1px solid rgba(0,212,255,0.12);border-radius:6px;padding:0.3rem 0.7rem;background:rgba(0,212,255,0.03);transition:all 0.25s;"
+             onmouseover="this.style.borderColor='rgba(0,212,255,0.35)'"
+             onmouseout="this.style.borderColor='rgba(0,212,255,0.12)'">
+          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/github/github-original.svg"
+               width="16" height="16" loading="lazy" alt="GitHub" class="github-icon"
+               style="width:16px;height:16px;filter:invert(1);"
+               onerror="imgFail(this,'#1a1a2e','#333','GH')">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:rgba(0,212,255,0.65);">GitHub</span>
         </div>
 
-        <!-- Linux -->
-        <div class="skill-icon-grid hover-target">
-          <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" style="width:36px;height:36px;filter:drop-shadow(0 0 6px rgba(255,204,0,0.6));" alt="Linux">
-          <div class="skill-name">Linux</div>
+        <!-- Modrinth -->
+        <div class="hover-target" title="Modrinth"
+             style="display:flex;align-items:center;gap:0.35rem;border:1px solid rgba(0,212,255,0.12);border-radius:6px;padding:0.3rem 0.7rem;background:rgba(0,212,255,0.03);transition:all 0.25s;"
+             onmouseover="this.style.borderColor='rgba(0,212,255,0.35)'"
+             onmouseout="this.style.borderColor='rgba(0,212,255,0.12)'">
+          <img src="https://cdn.jsdelivr.net/gh/modrinth/brand@main/logo/modrinth-logo.svg"
+               width="16" height="16" loading="lazy" alt="Modrinth"
+               style="width:16px;height:16px;object-fit:contain;border-radius:3px;filter:drop-shadow(0 0 4px rgba(0,212,255,0.25));"
+               onerror="imgFailMulti(this,['https://cdn.simpleicons.org/modrinth/1ee2a5','https://avatars.githubusercontent.com/u/102193392?s=32'],'#1ee2a5','#0ea5e9','MR')">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:rgba(0,212,255,0.65);">Modrinth</span>
         </div>
 
       </div>
+
     </div>
   </div>
 </section>
 
 <!-- CONTACT -->
 <!-- TOAST MODAL -->
-<div id="toastOverlay" style="display:none;position:fixed;inset:0;z-index:9000;backdrop-filter:blur(6px);background:rgba(2,11,24,0.45);align-items:center;justify-content:center;">
+<!-- TOAST MODAL — muncul setelah form dikirim, tidak pernah muncul sendiri -->
+<div id="toastOverlay" style="
+  display:none; position:fixed; inset:0; z-index:9000;
+  backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  background:rgba(2,11,24,0.5);
+  align-items:center; justify-content:center;
+  padding:1rem;">                   <!-- padding agar tidak mentok di mobile -->
   <div id="toastBox" style="
-    background:rgba(5,18,38,0.85);
-    border:1px solid rgba(0,212,255,0.25);
-    border-radius:10px;
-    padding:2.5rem 3rem;
+    background:rgba(4,16,36,0.92);
+    border:1px solid rgba(0,212,255,0.28);
+    border-radius:12px;
+    padding:2rem 2.5rem;
     text-align:center;
-    max-width:360px;width:90%;
-    box-shadow:0 0 60px rgba(0,212,255,0.15),0 0 120px rgba(0,212,255,0.06);
-    transform:scale(0.88);opacity:0;
-    transition:transform 0.35s cubic-bezier(0.16,1,0.3,1),opacity 0.35s ease;
-    position:relative;
-  ">
-    <!-- close btn -->
-    <button onclick="closeToast()" style="position:absolute;top:0.8rem;right:0.8rem;background:none;border:none;color:rgba(0,212,255,0.4);font-size:1.1rem;cursor:none;line-height:1;transition:color 0.2s;" onmouseover="this.style.color='var(--cyan-glow)'" onmouseout="this.style.color='rgba(0,212,255,0.4)'">✕</button>
-    <!-- icon -->
-    <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,var(--cyan-glow),var(--blue-accent));display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;box-shadow:0 0 28px rgba(0,212,255,0.5);">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#020b18" stroke-width="2.8"><polyline points="20 6 9 17 4 12"/></svg>
+    max-width:340px; width:100%;    /* width:100% + max-width aman di semua layar */
+    box-shadow:0 0 50px rgba(0,212,255,0.14), 0 0 100px rgba(0,212,255,0.05), inset 0 1px 0 rgba(0,212,255,0.1);
+    transform:scale(0.85) translateY(16px);
+    opacity:0;
+    transition:transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease;
+    position:relative; overflow:hidden;">
+
+    <!-- Garis cahaya atas -->
+    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.5),transparent);"></div>
+
+    <!-- Tombol tutup -->
+    <button onclick="closeToast()" class="hover-target"
+      style="position:absolute;top:0.75rem;right:0.75rem;
+             background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);
+             color:rgba(0,212,255,0.5);width:28px;height:28px;border-radius:50%;
+             display:flex;align-items:center;justify-content:center;
+             cursor:none;line-height:1;font-size:0.75rem;
+             transition:all 0.2s;"
+      onmouseover="this.style.background='rgba(0,212,255,0.14)';this.style.color='var(--cyan-glow)';this.style.borderColor='var(--cyan-glow)'"
+      onmouseout="this.style.background='rgba(0,212,255,0.06)';this.style.color='rgba(0,212,255,0.5)';this.style.borderColor='rgba(0,212,255,0.15)'">
+      ✕
+    </button>
+
+    <!-- Ikon centang berglow -->
+    <div style="width:52px;height:52px;border-radius:50%;
+                background:linear-gradient(135deg,var(--cyan-glow),var(--blue-accent));
+                display:flex;align-items:center;justify-content:center;
+                margin:0 auto 1rem;
+                box-shadow:0 0 24px rgba(0,212,255,0.5), 0 0 48px rgba(0,212,255,0.2);">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="rgba(2,11,24,1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
     </div>
-    <h3 style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;color:#fff;margin-bottom:0.6rem;letter-spacing:0.05em;">Pesan Terkirim!</h3>
-    <p style="font-family:'Rajdhani',sans-serif;font-size:0.95rem;color:rgba(0,212,255,0.75);line-height:1.6;">Terima kasih atas pesannya 🚀<br>Gw akan segera merespon.</p>
-    <div style="margin-top:1.5rem;">
-      <button onclick="closeToast()" class="btn-outline hover-target" style="border:none;cursor:none;font-size:0.72rem;padding:0.6rem 1.5rem;">Tutup</button>
+
+    <!-- Judul -->
+    <h3 style="font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:700;
+               color:#ffffff;margin-bottom:0.5rem;letter-spacing:0.06em;">
+      Pesan Terkirim!
+    </h3>
+
+    <!-- Nama pengirim — diisi JS -->
+    <p id="toastSender" style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;
+       color:var(--cyan-glow);margin-bottom:0.6rem;opacity:0.85;"></p>
+
+    <!-- Deskripsi -->
+    <p style="font-family:'Rajdhani',sans-serif;font-size:0.92rem;
+              color:rgba(180,210,240,0.75);line-height:1.65;">
+      Terima kasih atas pesannya&nbsp;🚀<br>
+      Saya akan segera merespon.
+    </p>
+
+    <!-- Tombol tutup -->
+    <div style="margin-top:1.4rem;">
+      <button onclick="closeToast()" class="hover-target btn-outline"
+        style="border:1px solid rgba(0,212,255,0.3);background:rgba(0,212,255,0.05);
+               cursor:none;font-size:0.72rem;padding:0.55rem 1.4rem;border-radius:3px;
+               font-family:'Orbitron',sans-serif;color:var(--cyan-glow);
+               letter-spacing:0.1em;font-weight:600;
+               transition:all 0.25s;"
+        onmouseover="this.style.background='rgba(0,212,255,0.12)';this.style.borderColor='var(--cyan-glow)'"
+        onmouseout="this.style.background='rgba(0,212,255,0.05)';this.style.borderColor='rgba(0,212,255,0.3)'">
+        Tutup
+      </button>
     </div>
+
+    <!-- Garis cahaya bawah -->
+    <div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent);"></div>
   </div>
 </div>
 
@@ -1005,7 +1274,7 @@
     <div class="reveal" style="margin-bottom:3rem;text-align:center;">
       <div class="section-tag" style="text-align:center;">// 04 — Contact</div>
       <h2 class="section-title" style="text-align:center;">Mari <span>Berkolaborasi</span></h2>
-      <p style="margin-top:0.75rem;color:rgba(180,220,240,0.55);font-size:1rem;">Punya proyek keren? Gw siap mendengar dan berdiskusi.</p>
+      <p style="margin-top:0.75rem;color:rgba(180,220,240,0.55);font-size:1rem;">Punya proyek keren? Saya siap mendengar dan berdiskusi.</p>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:2rem;" class="responsive-grid">
@@ -1051,7 +1320,7 @@
 
       <div style="display:flex;flex-direction:column;gap:1rem;" class="reveal-right">
         <div class="contact-card" style="flex:1;">
-          <h3 style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;color:#fff;margin-bottom:1.5rem;">Connect Langsung</h3>
+          <h3 class="connect-title" style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:700;color:#fff;margin-bottom:1.5rem;">Connect Langsung</h3>
           <div style="display:flex;flex-direction:column;gap:0.75rem;">
 
             <a href="https://discord.gg/JKtVZMuXbJ" target="_blank" class="hover-target" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;border:1px solid rgba(0,212,255,0.12);border-radius:4px;text-decoration:none;transition:all 0.3s;background:rgba(5,15,30,0.4);" onmouseover="this.style.borderColor='rgba(88,101,242,0.6)';this.style.boxShadow='0 0 20px rgba(88,101,242,0.15)'" onmouseout="this.style.borderColor='rgba(0,212,255,0.12)';this.style.boxShadow='none'">
@@ -1112,22 +1381,15 @@
             </svg>
             Pop-up
           </button>
-          <!-- Mode marquee scroll horizontal di dalam kotak -->
-          <button id="modeMarquee" onclick="setMsgMode('marquee')" title="Scroll di kotak"
-            style="background:none;border:none;cursor:none;display:flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border-radius:4px;transition:all 0.2s;font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:rgba(0,212,255,0.5);" class="hover-target">
-            <!-- ikon: panah kanan-kiri -->
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="17 1 21 5 17 9"/><line x1="3" y1="5" x2="21" y2="5"/>
-              <polyline points="7 15 3 19 7 23"/><line x1="21" y1="19" x2="3" y2="19"/>
-            </svg>
-            Marquee
-          </button>
+
         </div>
       </div>
 
       <!-- MARQUEE CONTAINER: hanya terlihat saat mode marquee aktif + ada pesan -->
-      <div id="marqueeWrap" style="display:none;overflow:hidden;border:1px solid rgba(0,212,255,0.15);border-radius:6px;background:rgba(5,15,30,0.5);padding:0.6rem 0;margin-bottom:1rem;">
-        <div id="marqueeTrack" style="display:flex;gap:3rem;width:max-content;will-change:transform;">
+      <!-- marqueeWrap: height disesuaikan kartu 1:1 (160px) + padding 12px atas-bawah -->
+      <div id="marqueeWrap" style="display:none;overflow:hidden;border:1px solid rgba(0,212,255,0.15);border-radius:8px;background:rgba(5,15,30,0.5);padding:0.75rem 0;margin-bottom:1rem;height:190px;">
+        <!-- marqueeTrack: gap 1rem antar kartu, will-change GPU layer -->
+        <div id="marqueeTrack" style="display:flex;gap:1rem;padding:0 1rem;width:max-content;will-change:transform;backface-visibility:hidden;">
           <!-- item marquee diisi via JS -->
         </div>
       </div>
@@ -1223,10 +1485,79 @@
   #hero { padding: 5rem 1.2rem 3rem; }
   section { padding-left: 1.2rem !important; padding-right: 1.2rem !important; }
   .stat-num { font-size: 1.8rem; }
+
+  /* ── Optimasi performa mobile: kurangi efek berat ── */
+  /* Hapus backdrop-filter di mobile — boros GPU */
+  .about-card, .career-item, .project-card,
+  .skill-bar-wrap, .contact-card, .ticker-bubble,
+  .marquee-item { backdrop-filter: none !important; }
+
+  /* Matikan animasi hover di mobile (tidak ada hover di touchscreen) */
+  .hover-target:hover { transform: none !important; box-shadow: none !important; }
+
+  /* Kurangi glow blur yang berat di mobile */
+  #glow-follow { display: none; }           /* matikan total — tidak ada mouse di mobile */
+  #cursor, #cursor-ring { display: none; }  /* custom cursor tidak relevan di touch */
+
+  /* Hero orb: kurangi blur agar tidak berat */
+  .hero-orb { filter: blur(40px) !important; opacity: 0.08 !important; }
+
+  /* Reveal delay lebih pendek di mobile */
+  .reveal, .reveal-left, .reveal-right { transition-duration: 0.35s !important; }
+
+  /* Ticker bubble: lebih kecil di mobile */
+  .ticker-bubble { max-width: min(300px, calc(100vw - 2rem)); }
+  #msgTicker { bottom: 1rem; padding: 0 0.75rem; }
+
+  /* Stats hero: 2×2 di mobile agar tidak terlalu rapat */
+  .stats-grid { grid-template-columns: repeat(2,1fr) !important; max-width:100% !important; }
+  /* Grid skill icon: 2 kolom di mobile agar tidak terlalu sempit */
+  #skillIconGrid { grid-template-columns: repeat(2,1fr) !important; }
+  /* LeafMC Paper fork label: sedikit lebih besar di mobile */
+  .skill-icon-grid [style*="0.48rem"] { font-size: 0.55rem !important; }
+}
+
+/* ── Scrollbar tipis dan elegan ── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,212,255,0.2); border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,212,255,0.4); }
+
+/* ── Reduce motion: hormati preferensi sistem ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 </style>
 
 <script>
+// ─── IMAGE FALLBACK HELPERS ──────────────────────────────────────────────
+// imgFail: ganti img yang gagal load dengan div gradient berisi inisial label
+function imgFail(el, c1, c2, label) {
+  var d = document.createElement('div');
+  d.style.cssText = [
+    'width:36px','height:36px','border-radius:6px','display:flex',
+    'align-items:center','justify-content:center',
+    'background:linear-gradient(135deg,'+c1+','+c2+')',
+    "font-family:'Orbitron',sans-serif",'font-size:0.55rem',
+    'font-weight:700','color:#fff','flex-shrink:0'
+  ].join(';');
+  d.textContent = label;
+  if (el.parentNode) el.parentNode.replaceChild(d, el); // ganti elemen di DOM
+}
+
+// imgFailMulti: coba daftar URL fallback satu per satu sebelum tampilkan teks
+function imgFailMulti(el, urls, c1, c2, label) {
+  if (!urls || urls.length === 0) { imgFail(el, c1, c2, label); return; }
+  var next = urls[0];              // ambil URL berikutnya
+  var rest = urls.slice(1);        // sisa URL
+  el.onerror = function() { imgFailMulti(el, rest, c1, c2, label); };
+  el.src = next;                   // coba load URL berikutnya
+}
+
 // ─── CURSOR & GLOW — unified rAF loop, zero CSS transition ───────────────
 const cursor    = document.getElementById('cursor');       // titik kecil kursor
 const cursorRing= document.getElementById('cursor-ring'); // cincin di sekitar kursor
@@ -1287,17 +1618,23 @@ function tick() {
 requestAnimationFrame(tick); // mulai loop
 
 // ─── SCROLL REVEAL — elemen muncul saat masuk viewport ───────────────────
-const reveals = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+// Observer tunggal: tangkap semua kelas reveal sekaligus
+const reveals = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .reveal-stagger, .reveal-fade, .reveal-scale');
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(e => {
-    if(e.isIntersecting) {
-      e.target.classList.add('visible'); // tambah class visible → animasi CSS jalan
-      // Jika di dalam elemen ada skill bar, trigger animasinya juga
-      const bars = e.target.querySelectorAll ? e.target.querySelectorAll('.skill-bar-fill') : [];
-      bars.forEach(bar => { bar.style.width = bar.dataset.width + '%'; });
-    }
+    if (!e.isIntersecting) return;
+    e.target.classList.add('visible');       // trigger animasi CSS
+    // Trigger skill bar fill jika ada di dalam elemen ini
+    e.target.querySelectorAll?.('.skill-bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.width + '%';
+    });
+    // Unobserve setelah visible agar tidak trigger ulang (performa lebih baik)
+    observer.unobserve(e.target);
   });
-}, { threshold: 0.15 }); // trigger saat 15% elemen terlihat
+}, {
+  threshold: 0.12,    // trigger saat 12% elemen terlihat
+  rootMargin: '0px 0px -40px 0px'  // sedikit sebelum benar-benar masuk viewport
+});
 reveals.forEach(el => observer.observe(el));
 
 // Skill bar: observer terpisah agar bisa trigger dari parent manapun
@@ -1315,6 +1652,10 @@ allBars.forEach(b => barObserver.observe(b));
 function toggleMenu() {
   const nav = document.getElementById('navLinks');
   nav.classList.toggle('open'); // toggle class open untuk tampilkan/sembunyikan
+  // Pastikan mobileThemeToggle terlihat saat menu terbuka
+  // (inline display:flex sudah ada, tapi explicit set agar 100% aman di semua browser)
+  const mt = document.getElementById('mobileThemeToggle');
+  if (mt) mt.style.display = nav.classList.contains('open') ? 'flex' : 'none';
 }
 document.querySelectorAll('.nav-links a').forEach(link => {
   link.addEventListener('click', () => {
@@ -1335,22 +1676,57 @@ window.addEventListener('scroll', () => {
 // ═══════════════════════════════════════════════════════════════════════════
 let currentTheme = localStorage.getItem('greeze_theme') || 'auto'; // baca tema tersimpan
 
+// Terapkan tema ke body dan highlight tombol aktif di desktop + mobile
 function applyTheme(mode) {
-  const body = document.body;
+  const body       = document.body;
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
+  // Terapkan class: light-mode ada → terang, tidak ada → gelap
   if (mode === 'dark' || (mode === 'auto' && prefersDark)) {
-    body.classList.remove('light-mode'); // dark mode: hapus class light
+    body.classList.remove('light-mode');
   } else {
-    body.classList.add('light-mode');    // light mode: tambah class light
+    body.classList.add('light-mode');
   }
 
-  // Highlight tombol yang aktif
-  ['btnDark','btnLight','btnAuto'].forEach(id => {
+  // Tombol desktop (navbar)
+  const desktopMap = { dark:'btnDark', light:'btnLight', auto:'btnAuto' };
+  Object.values(desktopMap).forEach(id => {
     document.getElementById(id)?.classList.remove('theme-btn-active');
   });
-  const activeId = mode === 'dark' ? 'btnDark' : mode === 'light' ? 'btnLight' : 'btnAuto';
-  document.getElementById(activeId)?.classList.add('theme-btn-active');
+  document.getElementById(desktopMap[mode])?.classList.add('theme-btn-active');
+
+  // Tombol mobile (hamburger menu) — sync warna aktif
+  const mobileMap  = { dark:'mbtnDark', light:'mbtnLight', auto:'mbtnAuto' };
+  Object.values(mobileMap).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Reset ke style default
+    el.style.background   = 'rgba(0,212,255,0.04)';
+    el.style.borderColor  = 'rgba(0,212,255,0.18)';
+    el.style.color        = 'rgba(0,212,255,0.65)';
+  });
+  const mActiveEl = document.getElementById(mobileMap[mode]);
+  if (mActiveEl) {
+    // Highlight tombol terpilih
+    mActiveEl.style.background  = 'rgba(0,212,255,0.14)';
+    mActiveEl.style.borderColor = 'rgba(0,212,255,0.5)';
+    mActiveEl.style.color       = 'var(--cyan-glow)';
+  }
+
+  // Light mode: sesuaikan warna tombol mobile agar terbaca
+  if (body.classList.contains('light-mode')) {
+    Object.values(mobileMap).forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.style.borderColor = 'rgba(0,60,150,0.2)';
+      el.style.color       = '#0057a8';
+    });
+    if (mActiveEl) {
+      mActiveEl.style.background  = 'rgba(0,60,150,0.12)';
+      mActiveEl.style.borderColor = '#0057a8';
+      mActiveEl.style.color       = '#003d80';
+    }
+  }
 }
 
 function setTheme(mode) {
@@ -1377,9 +1753,20 @@ applyTheme(currentTheme); // terapkan tema saat halaman pertama dimuat
   const el = document.getElementById('visitorNum');
   if (!el) return;
 
-  const SEED = 128;     // nilai awal minimum agar tidak tampil dari 0
   const LS_KEY = 'greeze_visitors';   // key localStorage
   const SS_KEY = 'greeze_visited';    // key sessionStorage
+
+  const SEED = (() => {
+    // Hindari “reset ke 0” saat localStorage tidak tersedia/berubah.
+    // Jika tersimpan nilai sebelumnya, pakai itu. Kalau tidak, mulai dari 1.
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      const parsed = parseInt(raw, 10);
+      return (Number.isFinite(parsed) && parsed >= 0) ? parsed : 1;
+    } catch(_) {
+      return 1;
+    }
+  })();
 
   let count = SEED;
 
@@ -1388,7 +1775,7 @@ applyTheme(currentTheme); // terapkan tema saat halaman pertama dimuat
     const raw    = localStorage.getItem(LS_KEY);
     const parsed = parseInt(raw, 10);
     // Terima nilai tersimpan hanya jika valid dan tidak lebih kecil dari SEED
-    if (Number.isFinite(parsed) && parsed >= SEED) count = parsed;
+    if (Number.isFinite(parsed) && parsed >= 0) count = parsed; // terima 0 ke atas
 
     // Hanya increment jika sesi ini belum pernah dihitung (mencegah refresh spam)
     if (!sessionStorage.getItem(SS_KEY)) {
@@ -1398,13 +1785,13 @@ applyTheme(currentTheme); // terapkan tema saat halaman pertama dimuat
       try { sessionStorage.setItem(SS_KEY, '1'); }        catch(_){}
     }
   } catch (_) {
-    // Incognito/Firefox strict mode — storage diblok total, gunakan SEED
-    count = SEED;
+    // Incognito/Firefox strict mode — storage diblok total, gunakan 0
+    count = 0;
   }
 
   // ── Animasi count-up (ease-out expo, smooth 60fps) ───────────────────
   const target    = count;
-  const startVal  = Math.max(SEED, target - 35); // mulai dekat target agar singkat
+  const startVal  = Math.max(0, target - 20);    // animasi count-up dari dekat nilai akhir
   const duration  = 1400; // ms total animasi
   let   startTime = null;
 
@@ -1478,96 +1865,178 @@ const avatarColors = [
   ['#f472b6','#ec4899'],
 ];
 
-// Bangun ulang isi marquee dari array messages
+// ── MARQUEE ENGINE: pure rAF, kanan→kiri, loop seamless, drag support ──────
+// State marquee (module-level agar bisa diakses drag handler)
+let mqState = {
+  x:        0,          // posisi translateX saat ini (px)
+  speed:    1.2,        // px per frame (≈72px/detik di 60fps)
+  halfW:    0,          // lebar satu set konten (px) — batas loop
+  running:  false,      // apakah rAF loop aktif
+  rafId:    null,       // handle rAF untuk bisa di-cancel
+  dragging: false,      // sedang di-drag?
+  dragStartX: 0,        // posisi pointer saat mulai drag
+  dragStartMqX: 0,      // nilai mqState.x saat mulai drag
+};
+
+// Build HTML satu set kartu marquee
+function buildMarqueeItems() {
+  return messages.map((m, i) => {
+    const colors   = avatarColors[i % avatarColors.length];
+    const initials = m.nama.slice(0, 2).toUpperCase();
+    const avatarInner = m.photo
+      ? `<img src="${m.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+      : `<span style="background:linear-gradient(135deg,${colors[0]},${colors[1]});width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:0.58rem;">${initials}</span>`;
+    const emailRow = m.email ? `<div class="marquee-item-email">${escHtml(m.email)}</div>` : '';
+    const pesanShort = m.pesan.length > 80 ? m.pesan.slice(0,80)+'…' : m.pesan;
+    return `<div class="marquee-item">
+      <div class="marquee-item-header">
+        <div class="marquee-avatar">${avatarInner}</div>
+        <span class="marquee-item-name">${escHtml(m.nama)}</span>
+      </div>
+      ${emailRow}
+      <div class="marquee-item-msg">${escHtml(pesanShort)}</div>
+    </div>`;
+  }).join('');
+}
+
+// rAF loop: geser kiri 1.2px/frame — seamless loop saat melewati batas halfW
+function mqTick() {
+  mqState.rafId = requestAnimationFrame(mqTick);   // jadwalkan dulu agar loop tidak putus
+  if (!mqState.running || mqState.dragging) return; // pause saat drag atau stop
+
+  mqState.x -= mqState.speed;                      // geser ke kiri tiap frame
+
+  // Reset seamless: saat posisi sudah melewati -halfW (satu set penuh),
+  // loncat kembali sejauh halfW — secara visual identik karena konten diduplikat
+  if (mqState.x < -mqState.halfW) {
+    mqState.x += mqState.halfW;                    // loncat ke posisi ekuivalen
+  }
+
+  const track = document.getElementById('marqueeTrack');
+  if (track) track.style.transform = `translateX(${mqState.x}px)`;
+}
+
+// Pasang drag listeners pada marqueeWrap
+function initMarqueeDrag(wrap) {
+  // Pointer events: tangkap mouse & touch sekaligus
+  wrap.addEventListener('pointerdown', (e) => {
+    mqState.dragging   = true;
+    mqState.dragStartX = e.clientX;
+    mqState.dragStartMqX = mqState.x;
+    wrap.setPointerCapture(e.pointerId); // agar drag tidak terputus keluar elemen
+    e.preventDefault();
+  }, { passive: false });
+
+  wrap.addEventListener('pointermove', (e) => {
+    if (!mqState.dragging) return;
+    const delta = e.clientX - mqState.dragStartX; // seberapa jauh drag
+    let newX = mqState.dragStartMqX + delta;
+    // Jaga agar tetap dalam range loop seamless
+    newX = ((newX % mqState.halfW) + mqState.halfW) % mqState.halfW * -1;
+    mqState.x = mqState.dragStartMqX + delta;     // ikuti pointer bebas
+    const track = document.getElementById('marqueeTrack');
+    if (track) track.style.transform = `translateX(${mqState.x}px)`;
+  });
+
+  const endDrag = () => { mqState.dragging = false; };
+  wrap.addEventListener('pointerup',     endDrag);
+  wrap.addEventListener('pointercancel', endDrag);
+}
+
+// Rebuild & mulai marquee
 function updateMarquee() {
   const wrap  = document.getElementById('marqueeWrap');
   const track = document.getElementById('marqueeTrack');
   if (!wrap || !track) return;
 
-  if (messages.length === 0) {
-    wrap.style.display = 'none'; // sembunyikan jika belum ada pesan
-    return;
-  }
+  if (messages.length === 0) { wrap.style.display = 'none'; return; }
 
-  // Buat satu set item HTML
-  function buildItems() {
-    return messages.map((m, i) => {
-      const colors   = avatarColors[i % avatarColors.length];
-      const initials = m.nama.slice(0, 2).toUpperCase();
-      const avatarInner = m.photo
-        ? `<img src="${m.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
-        : `<span style="background:linear-gradient(135deg,${colors[0]},${colors[1]});width:100%;height:100%;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:0.5rem;">${initials}</span>`;
-      return `
-        <div class="marquee-item">
-          <div class="marquee-avatar">${avatarInner}</div>
-          <span class="marquee-item-name">${escHtml(m.nama)}</span>
-          <span style="color:rgba(0,212,255,0.3);font-size:0.7rem;">·</span>
-          <span class="marquee-item-msg">${escHtml(m.pesan.length > 50 ? m.pesan.slice(0,50)+'…' : m.pesan)}</span>
-        </div>`;
-    }).join('');
-  }
+  // Isi track dengan 2 salinan konten (A+B) untuk loop seamless
+  track.innerHTML = buildMarqueeItems() + buildMarqueeItems();
+  wrap.style.display = 'block';
 
-  // Duplikat 2x untuk seamless loop (saat track sudah separuh jalan, ulang dari awal)
-  track.innerHTML = buildItems() + buildItems();
-  track.classList.remove('running','paused');
-  // Force reflow agar animasi mulai ulang dari awal
+  // Paksa reflow agar scrollWidth sudah terhitung
   void track.offsetWidth;
-  track.classList.add('running');
 
-  wrap.style.display = 'block'; // tampilkan wrap
+  // halfW = lebar satu set (A), titik di mana posisi A dan B identik
+  mqState.halfW = track.scrollWidth / 2;
+
+  // Mulai dari kanan VIEWPORT — bukan kanan konten
+  // wrapW = lebar container yang terlihat (viewport-clipped)
+  // Dengan x = +wrapW, seluruh track berada di luar kanan layar
+  // sehingga animasi benar-benar masuk dari kanan ke kiri
+  const wrapW   = wrap.offsetWidth || window.innerWidth;
+  mqState.x     = wrapW;                             // posisi awal: tepat di luar kanan viewport
+
+  track.style.transform = `translateX(${mqState.x}px)`;
+
+  // Stop loop lama, mulai baru
+  if (mqState.rafId) cancelAnimationFrame(mqState.rafId);
+  mqState.running = true;
+  mqState.rafId   = requestAnimationFrame(mqTick);
+
+  // Pasang drag handler (hanya sekali)
+  if (!wrap._mqDragInit) {
+    initMarqueeDrag(wrap);
+    wrap._mqDragInit = true;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FLOATING TICKER BUBBLES — pop-up melayang kiri bawah, loop 10 pesan demo
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Daftar pesan demo yang diputar secara berulang saat mode bubble aktif
-const tickerMessages = [
-  { name: 'AerithDev',    msg: 'Wah keren banget portofolionya! 🔥'     },
-  { name: 'NightOwl_ID',  msg: 'DipaNusantara keren, suka projectnya'   },
-  { name: 'ZephyrCraft',  msg: 'Plugin buatannya mantap bro 👍'          },
-  { name: 'LunaScript',   msg: 'Dark mode-nya aesthetic banget!'         },
-  { name: 'VoidRunner',   msg: 'Java plugin skills-nya level dewa 🐲'    },
-  { name: 'StarForge',    msg: 'Minta collab dong! DM already 📨'        },
-  { name: 'CipherByte',   msg: 'Grid backgroundnya keren banget'         },
-  { name: 'RavenCraft',   msg: 'Kapan Wisteria Prologue balik? 😭'       },
-  { name: 'PixelNova',    msg: 'Career Vault-nya inspiring banget!'      },
-  { name: 'EchoShard',    msg: 'Suka quote AI-nya, very honest 💯'       },
-];
+// tickerIdx: indeks rotasi pesan di messages[] untuk bubble ticker
+// Tidak ada lagi array demo — ticker hanya tampilkan pesan sungguhan dari form
+let tickerIdx = 0;
 
-let tickerIdx = 0; // indeks rotasi pesan ticker
+// showTickerMessage versi lama dihapus — digantikan versi terintegrasi di atas
 
+// Ticker loop — hanya berjalan jika ada pesan sungguhan di messages[]
+// Interval disimpan agar bisa di-stop/restart saat pesan bertambah
+let tickerInterval = null;
+
+function startTickerIfNeeded() {
+  if (tickerInterval) return;                   // sudah berjalan, skip
+  if (messages.length === 0) return;            // belum ada pesan, jangan jalan
+  if (msgDisplayMode !== 'bubble') return;      // mode bukan bubble, skip
+
+  showTickerMessage();                          // tampilkan segera pesan pertama
+  tickerInterval = setInterval(() => {
+    if (messages.length > 0) showTickerMessage(); // hanya jalan jika masih ada pesan
+  }, 4000);                                     // interval 4 detik — nyaman dibaca
+}
+
+// showTickerMessage sekarang ambil dari messages[] sungguhan, bukan demo array
 function showTickerMessage() {
-  if (msgDisplayMode !== 'bubble') return; // hanya jalankan di mode bubble
+  if (msgDisplayMode !== 'bubble') return;
+  if (messages.length === 0) return;            // guard: tidak ada pesan = tidak tampil
 
-  const data    = tickerMessages[tickerIdx % tickerMessages.length];
-  tickerIdx++;
+  // Rotasi melingkar dari array messages
+  const m       = messages[tickerIdx % messages.length];
+  tickerIdx     = (tickerIdx + 1) % messages.length;
+
   const colors   = avatarColors[tickerIdx % avatarColors.length];
-  const initials = data.name.slice(0, 2).toUpperCase();
+  const initials = m.nama.slice(0, 2).toUpperCase();
 
-  // Buat elemen bubble
+  const avatarInner = m.photo
+    ? `<img src="${m.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`
+    : `<span style="font-family:'Orbitron',sans-serif;font-size:0.6rem;font-weight:700;color:#fff;">${initials}</span>`;
+
   const bubble = document.createElement('div');
   bubble.className = 'ticker-bubble';
   bubble.innerHTML = `
     <div class="ticker-avatar" style="background:linear-gradient(135deg,${colors[0]},${colors[1]});">
-      <span style="font-family:'Orbitron',sans-serif;font-size:0.6rem;font-weight:700;color:#fff;">${initials}</span>
+      ${avatarInner}
     </div>
     <div class="ticker-text">
-      <span class="ticker-name">${data.name}</span>
-      <span class="ticker-msg">${data.msg}</span>
+      <span class="ticker-name">${escHtml(m.nama)}</span>
+      <span class="ticker-msg">${escHtml(m.pesan.length > 55 ? m.pesan.slice(0,55)+'…' : m.pesan)}</span>
     </div>`;
 
   document.getElementById('msgTicker').appendChild(bubble);
-
-  // Hapus bubble setelah animasi keluar selesai (4s tayang + 0.5s fade)
-  setTimeout(() => { try { bubble.remove(); } catch(e){} }, 4700);
+  setTimeout(() => { try { bubble.remove(); } catch(_){} }, 4900); // hapus setelah animasi selesai
 }
-
-// Mulai loop ticker: pesan pertama setelah 2 detik, lalu setiap 3.5 detik
-setTimeout(() => {
-  showTickerMessage();
-  setInterval(showTickerMessage, 3500);
-}, 2000);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONTACT FORM SYSTEM — kirim pesan, preview foto, toast notifikasi
@@ -1595,12 +2064,23 @@ function kirimPesan() {
   const email = document.getElementById('msgEmail').value.trim();
   const pesan = document.getElementById('msgPesan').value.trim();
 
-  // Validasi: nama dan pesan wajib diisi
-  if (!nama || !pesan) {
-    if (!nama)  shake(document.getElementById('msgNama'));
-    if (!pesan) shake(document.getElementById('msgPesan'));
+  // Validasi: nama, email (harus @gmail.com), dan pesan wajib diisi
+  if (!nama || !pesan || !email) {
+    if (!nama)   shake(document.getElementById('msgNama'));
+    if (!email)  shake(document.getElementById('msgEmail'));
+    if (!pesan)  shake(document.getElementById('msgPesan'));
     return;
   }
+
+  // Email harus Gmail saja (berdasarkan permintaan user)
+  // Contoh valid: sesuatu@gmail.com
+  const isGmail = /^([\w.\-+]+)@gmail\.com$/i.test(email);
+  if (!isGmail) {
+    shake(document.getElementById('msgEmail'));
+    document.getElementById('msgEmail').focus?.();
+    return;
+  }
+
 
   // Format timestamp Indonesia
   const ts = new Date().toLocaleString('id-ID', {
@@ -1609,7 +2089,9 @@ function kirimPesan() {
   });
 
   messages.unshift({ nama, email, pesan, photo: currentPhotoData, ts }); // tambah ke awal array
-  renderMessages(); // render ulang daftar pesan
+  renderMessages();           // render ulang kartu daftar pesan
+  if (msgDisplayMode === 'marquee') updateMarquee(); // refresh marquee jika mode aktif
+  startTickerIfNeeded();      // nyalakan ticker jika ini pesan pertama & mode bubble
 
   // Reset semua field form
   document.getElementById('msgNama').value  = '';
@@ -1621,7 +2103,7 @@ function kirimPesan() {
   preview.style.borderColor = 'rgba(0,212,255,0.25)';
   preview.style.boxShadow   = 'none';
 
-  showToast(); // tampilkan notifikasi popup
+  showToast(nama); // tampilkan notifikasi popup dengan nama pengirim
 }
 
 // Animasi goyang pada input yang belum diisi
@@ -1634,26 +2116,50 @@ function shake(el) {
   }, { once: true });
 }
 
-// Tampilkan toast popup sukses
-function showToast() {
+// Tampilkan toast popup — terima nama pengirim untuk ditampilkan di dalam modal
+function showToast(nama) {
   const overlay = document.getElementById('toastOverlay');
   const box     = document.getElementById('toastBox');
+  const sender  = document.getElementById('toastSender');
+
+  // Isi nama pengirim jika ada
+  if (sender && nama) sender.textContent = '— ' + nama + ' —';
+
+  // Paksa reset state agar selalu bisa tampil ulang
+  box.style.opacity = '0';
+  box.style.transform = 'scale(0.85) translateY(16px)';
+  box.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease';
+
   overlay.style.display = 'flex';
+  // Double rAF: pastikan display:flex sudah aktif sebelum transition
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       box.style.opacity   = '1';
-      box.style.transform = 'scale(1)'; // animasi scale-in
+      box.style.transform = 'scale(1) translateY(0)'; // scale-in + slide-up
     });
   });
 }
 
-// Tutup toast popup
+
+// Tutup toast popup + reset state agar bisa dibuka lagi berikutnya
 function closeToast() {
   const overlay = document.getElementById('toastOverlay');
   const box     = document.getElementById('toastBox');
+
   box.style.opacity   = '0';
-  box.style.transform = 'scale(0.88)';
-  setTimeout(() => { overlay.style.display = 'none'; }, 320);
+  box.style.transform = 'scale(0.85) translateY(16px)'; // balik ke state awal
+
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    // Reset transform & opacity tanpa transition agar tidak ada flicker
+    box.style.transition = 'none';
+    box.style.opacity    = '0';
+    box.style.transform  = 'scale(0.85) translateY(16px)';
+    // Re-enable transition untuk pembukaan berikutnya
+    requestAnimationFrame(() => {
+      box.style.transition = 'transform 0.4s cubic-bezier(0.16,1,0.3,1), opacity 0.35s ease';
+    });
+  }, 340);
 }
 
 // Tutup toast jika klik di luar box
@@ -1726,41 +2232,242 @@ function escHtml(str) {
   to{opacity:1;transform:translateY(0);}
 }
 
-/* ═══════════════════════════════════════════
-   LIGHT MODE — override variabel warna saat
-   body memiliki class "light-mode"
-═══════════════════════════════════════════ */
+/* ════════════════════════════════════════════════════════════════
+   LIGHT MODE — override CSS variables & semua elemen agar terbaca
+   di background terang. Prinsip: teks gelap di bg terang, bukan
+   teks terang di bg terang (yang menyebabkan unreadable).
+════════════════════════════════════════════════════════════════ */
 body.light-mode {
-  --blue-deep: #eef4ff;        /* background utama jadi putih kebiruan */
-  --blue-dark: #dce8ff;
-  --blue-mid: #c5d8f8;
-  --blue-bright: #7ab0f5;
-  --cyan-glow: #0080c0;        /* aksen biru gelap agar kontras di bg terang */
-  --cyan-soft: #1a6fa0;
-  --blue-accent: #1d5fbb;
-  --blue-electric: #2563eb;
-  --grid-color: rgba(0, 80, 160, 0.07);
-  background: #eef4ff;
-  color: #0d1b2e;
+  /* Variabel warna utama — semua bergeser ke range gelap/medium */
+  --blue-deep:    #f0f5ff;
+  --blue-dark:    #e2eaff;
+  --blue-mid:     #c8d8f8;
+  --blue-bright:  #4a7fd4;
+  --cyan-glow:    #0057a8;     /* aksen biru tua, kontras di bg putih */
+  --cyan-soft:    #006bbf;
+  --blue-accent:  #1045a0;
+  --blue-electric:#1a42c8;
+  --grid-color:   rgba(0,60,150,0.055);
+  background-color: #f0f5ff;
+  color: #0a1628;              /* teks default: biru tinta gelap */
 }
-/* Teks dan border menyesuaikan di light mode */
+
+/* ── Body & teks global ── */
+body.light-mode,
+body.light-mode h1,
+body.light-mode h2,
+body.light-mode h3,
+body.light-mode h4,
+body.light-mode span,
+body.light-mode div,
+body.light-mode p    { color: #0a1628; }
+
+/* ── Heading section title: gradient biru gelap ── */
+body.light-mode .section-title             { color: #0a1628 !important; }
+body.light-mode .section-title span        {
+  background: linear-gradient(135deg,#0057a8,#1a42c8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Hero: teks tetap terbaca di bg terang ── */
+body.light-mode .hero-title                { filter: drop-shadow(0 0 20px rgba(0,87,168,0.25)); }
+body.light-mode .hero-sub                  { color: #0057a8 !important; }
+body.light-mode .hero-desc                 { color: #2d4a6e !important; }
+body.light-mode .hero-badge                { color: #0057a8 !important; border-color: rgba(0,87,168,0.3); background: rgba(0,87,168,0.06); }
+
+/* ── Navbar ── */
+body.light-mode nav                        { background: rgba(240,245,255,0.94); border-bottom-color: rgba(0,60,150,0.1); }
+/* Nav menu mobile di light mode */
+body.light-mode .nav-links.open            { background: rgba(240,245,255,0.98) !important; border-bottom-color: rgba(0,60,150,0.1); }
+body.light-mode .nav-links a               { color: #0057a8 !important; }
+body.light-mode .nav-logo                  { background: linear-gradient(135deg,#0057a8,#1a42c8); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+body.light-mode .nav-links a               { color: #0057a8 !important; }
+body.light-mode .nav-links a:hover         { color: #003d80 !important; text-shadow: 0 0 10px rgba(0,87,168,0.3); }
+
+/* ── Kartu / panel: putih solid, border biru tipis ── */
 body.light-mode .stat-card,
 body.light-mode .about-card,
+body.light-mode .about-info-card,
 body.light-mode .career-item,
 body.light-mode .project-card,
 body.light-mode .skill-bar-wrap,
 body.light-mode .skill-icon-grid,
-body.light-mode .contact-card { background: rgba(255,255,255,0.7); color: #0d1b2e; }
-body.light-mode .career-name,
-body.light-mode .project-title,
-body.light-mode .section-title { color: #0d1b2e; }
-body.light-mode .project-desc,
-body.light-mode p { color: rgba(13,27,46,0.75); }
-body.light-mode .contact-input { background: rgba(255,255,255,0.8); color: #0d1b2e; border-color: rgba(0,80,160,0.2); }
-body.light-mode nav { background: rgba(238,244,255,0.85); border-bottom-color: rgba(0,80,160,0.12); }
-body.light-mode #grid-bg { background-image: linear-gradient(rgba(0,80,160,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(0,80,160,0.06) 1px, transparent 1px); background-size: 50px 50px; }
-body.light-mode #glow-follow { background: radial-gradient(circle, rgba(0,80,160,0.06) 0%, transparent 70%); }
-body.light-mode #cursor { background: var(--cyan-glow); box-shadow: 0 0 10px var(--cyan-glow), 0 0 20px rgba(0,80,160,0.5); }
+body.light-mode .contact-card,
+body.light-mode .msg-card,
+body.light-mode .marquee-item              {
+  background: rgba(255,255,255,0.88) !important;
+  border-color: rgba(0,60,150,0.14) !important;
+}
+
+/* ── About info card: semua teks anak gelap ── */
+body.light-mode .about-info-card *         { color: #0a1628 !important; -webkit-text-fill-color: #0a1628 !important; }
+body.light-mode .about-info-card .section-tag { color: #0057a8 !important; -webkit-text-fill-color: #0057a8 !important; }
+body.light-mode .about-info-card .tech-badge  { color: #0e3a88 !important; -webkit-text-fill-color: #0e3a88 !important; }
+/* Status hijau tetap terbaca (gelap) */
+body.light-mode .about-info-card [style*="#10b981"] { color: #047857 !important; }
+
+/* ── Teks di dalam kartu ── */
+body.light-mode .career-name               { color: #0a1628 !important; }
+body.light-mode .career-role               { color: #0057a8 !important; }
+body.light-mode .project-title             { color: #0a1628 !important; }
+body.light-mode .project-desc              { color: #2d4a6e !important; }
+body.light-mode .project-tag               { color: #0057a8 !important; }
+body.light-mode .section-tag               { color: #0057a8 !important; }
+body.light-mode .stat-num                  { /* gradient tetap, sudah pakai var */ }
+body.light-mode .stat-label                { color: #3a5a8a !important; }
+body.light-mode .skill-name                { color: #1a3a6a !important; }
+body.light-mode .tech-badge                { color: #0e3a88 !important; border-color: rgba(14,58,136,0.2); background: rgba(14,58,136,0.06); }
+
+/* ── Quote block ── */
+body.light-mode .quote-block               { border-left-color: #0057a8; background: rgba(0,60,150,0.05); color: #0057a8 !important; font-style: italic; }
+
+/* ── Form kontak ── */
+body.light-mode .contact-input             { background: rgba(255,255,255,0.95) !important; color: #0a1628 !important; border-color: rgba(0,60,150,0.18); }
+body.light-mode .contact-input::placeholder{ color: rgba(0,60,150,0.3); }
+body.light-mode .contact-label             { color: #0057a8 !important; }
+
+/* ── Inline style override: warna terang → gelap di light mode ── */
+/* Tangkap semua variasi penulisan rgba inline dari elemen HTML */
+body.light-mode [style*="color:rgba(180,220,240"]       { color: #2d4a6e !important; }
+body.light-mode [style*="color: rgba(180,220,240"]      { color: #2d4a6e !important; }
+body.light-mode [style*="color:rgba(0,212,255"]         { color: #3a6a9a !important; }
+body.light-mode [style*="color: rgba(0,212,255"]        { color: #3a6a9a !important; }
+body.light-mode [style*="color:#fff"]                   { color: #0a1628 !important; }
+body.light-mode [style*="color: #fff"]                  { color: #0a1628 !important; }
+body.light-mode [style*="color:#ffffff"]                { color: #0a1628 !important; }
+body.light-mode [style*="color:rgba(255,255,255"]       { color: #2d4a6e !important; }
+body.light-mode [style*="color:#10b981"]                { color: #047857 !important; }
+
+/* ── About section: Focus area, Ecosystem, Status cards ── */
+/* Elemen p di dalam about-info-card punya inline rgba — override paksa */
+body.light-mode .about-info-card p,
+body.light-mode .about-info-card span:not(.career-status) { color: #2d4a6e !important; }
+
+/* ── Tech badge di about section ── */
+body.light-mode .about-info-card .tech-badge { color: #0e3a88 !important; }
+
+/* ── Status "Available for collaboration" ── */
+body.light-mode [style*="color:#10b981"] { color: #047857 !important; }
+
+/* ── Contact: Connect langsung (Discord, IG, TikTok, GitHub) links ── */
+/* Teks nama platform dan URL di mode terang */
+body.light-mode .contact-card a [style*="color:#fff"],
+body.light-mode .contact-card a div,
+body.light-mode .contact-card a span { color: #0a1628 !important; }
+
+/* Teks URL kecil di bawah nama platform */
+body.light-mode .contact-card a [style*="color:rgba(0,212,255,0.5)"],
+body.light-mode .contact-card a [style*="color:rgba(0,212,255"] { color: #3a6a9a !important; }
+
+/* Teks heading "Kirim Pesan" & "Connect Langsung" */
+body.light-mode .contact-card h3 { color: #0a1628 !important; }
+
+/* Contact link hover border tetap terbaca */
+body.light-mode .contact-card a { border-color: rgba(0,60,150,0.15) !important; background: rgba(255,255,255,0.7) !important; }
+
+/* ── Status badge: pastikan kontras di bg putih ── */
+body.light-mode .status-done   { background: rgba(4,120,87,0.1);  color: #047857; border-color: rgba(4,120,87,0.3); }
+body.light-mode .status-active { background: rgba(0,87,168,0.1);  color: #0057a8; border-color: rgba(0,87,168,0.3); }
+body.light-mode .status-left   { background: rgba(161,98,7,0.1);  color: #a16207; border-color: rgba(161,98,7,0.3); }
+
+/* ── Pesan masuk (board) & marquee ── */
+body.light-mode .marquee-item-name         { color: #0a1628 !important; }
+body.light-mode .marquee-item-email        { color: #3a6a9a !important; }
+body.light-mode .marquee-item-msg          { color: #0e3a88 !important; }
+body.light-mode .ticker-name               { color: #0a1628 !important; }
+body.light-mode .ticker-msg                { color: #0e3a88 !important; }
+body.light-mode .ticker-bubble             { background: rgba(240,245,255,0.92); border-color: rgba(0,60,150,0.2); }
+body.light-mode #marqueeWrap               { background: rgba(240,245,255,0.7); border-color: rgba(0,60,150,0.14); }
+body.light-mode .marquee-item-email        { color: #4a6a9a !important; }
+
+/* ── Skill icon: GitHub — di dark mode diinvert jadi putih,
+   di light mode kembalikan ke warna asli (hitam/abu) ── */
+body.light-mode .github-icon { filter: drop-shadow(0 0 4px rgba(0,0,0,0.15)) !important; }
+body.light-mode img[alt="GitHub"] { filter: drop-shadow(0 0 4px rgba(0,0,0,0.15)) !important; }
+
+/* ── Grid bg & glow ── */
+body.light-mode #grid-bg {
+  background-image:
+    linear-gradient(rgba(0,60,150,0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,60,150,0.055) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+body.light-mode #glow-follow               { background: radial-gradient(circle, rgba(0,60,150,0.04) 0%, transparent 70%); }
+
+/* ── Cursor ── */
+body.light-mode #cursor                    { background: #0057a8; box-shadow: 0 0 10px #0057a8, 0 0 18px rgba(0,87,168,0.35); }
+body.light-mode #cursor-ring               { border-color: rgba(0,87,168,0.4); }
+
+/* ── Footer & glow lines ── */
+body.light-mode footer                     { border-top-color: rgba(0,60,150,0.1); }
+body.light-mode .glow-line-h {
+  background: linear-gradient(90deg, transparent, #0057a8, #1a42c8, transparent);
+  box-shadow: 0 0 6px rgba(0,87,168,0.25);
+}
+
+/* ── Scrollbar ── */
+body.light-mode ::-webkit-scrollbar-track  { background: #e2eaff; }
+body.light-mode ::-webkit-scrollbar-thumb  { background: rgba(0,87,168,0.28); }
+
+/* ── Hero orbs: redup di light mode ── */
+body.light-mode .hero-orb                  { opacity: 0.06 !important; }
+
+/* ── Tombol theme aktif di light mode ── */
+body.light-mode .theme-btn-active          { background: rgba(0,60,150,0.14) !important; }
+
+/* ── About Info Cards (Focus Area / Ecosystem / Status) di light mode ── */
+body.light-mode .about-info-card {
+  background: rgba(255,255,255,0.85) !important;
+  border-color: rgba(0,60,150,0.15) !important;
+}
+/* Teks di dalam info cards — semua warna terang dibalik ke gelap */
+body.light-mode .about-info-card p,
+body.light-mode .about-info-card span,
+body.light-mode .about-info-card div { color: #1a2e4a; }
+body.light-mode .about-info-card .section-tag { color: #0057a8 !important; }
+/* Status dot teks */
+body.light-mode .about-info-card [style*="color:#10b981"] { color: #047857 !important; }
+/* Ecosystem paragraph */
+body.light-mode .about-info-card [style*="color:rgba(180,220,240"] { color: #2d4a6e !important; }
+
+/* ── Connect Langsung card + social links di light mode ── */
+body.light-mode .connect-title { color: #0a1628 !important; }
+/* Link social (discord, instagram, tiktok, github) */
+body.light-mode .contact-card a[style*="display:flex"] {
+  background: rgba(255,255,255,0.8) !important;
+  border-color: rgba(0,60,150,0.15) !important;
+}
+body.light-mode .contact-card a[style*="display:flex"] div,
+body.light-mode .contact-card a[style*="display:flex"] > div > div { color: #0a1628 !important; }
+/* Platform name (Discord, Instagram, dll) */
+body.light-mode .contact-card a .\:nth-child\(1\) { color: #0a1628 !important; }
+/* Semua teks putih di dalam contact card */
+body.light-mode .contact-card [style*="color:#fff"],
+body.light-mode .contact-card [style*="color: #fff"] { color: #0a1628 !important; }
+/* URL teks di bawah nama platform */
+body.light-mode .contact-card [style*="color:rgba(0,212,255"] { color: #3a6a9a !important; }
+
+/* ── Toast modal di light mode ── */
+body.light-mode #toastBox {
+  background: rgba(240,245,255,0.97) !important;
+  border-color: rgba(0,60,150,0.22) !important;
+  box-shadow: 0 0 40px rgba(0,60,150,0.12), 0 8px 32px rgba(0,0,0,0.08) !important;
+}
+body.light-mode #toastBox h3     { color: #0a1628 !important; }
+body.light-mode #toastBox p      { color: #2d4a6e !important; }
+body.light-mode #toastSender     { color: #0057a8 !important; }
+body.light-mode #toastOverlay    { background: rgba(200,215,240,0.45); }
+
+/* ── Marquee wrap di light mode: border dan bg selaras ── */
+body.light-mode #marqueeWrap {
+  background: rgba(240,245,255,0.8) !important;
+  border-color: rgba(0,60,150,0.13) !important;
+}
+body.light-mode .msg-mode-active {
+  background: rgba(0,60,150,0.12) !important;
+  color: #0057a8 !important;
+}
 
 /* ═══════════════════════════════════════════
    TEMA AKTIF — highlight tombol tema terpilih
@@ -1838,38 +2545,109 @@ body.light-mode .theme-btn-active {
    MARQUEE INLINE — pesan scroll horizontal
    smooth di dalam kotak message board
 ═══════════════════════════════════════════ */
-/* Track marquee: animasi translateX dari 0 ke -50% (duplikat isi untuk loop seamless) */
+/* Marquee: bergerak dari kanan ke kiri secara seamless.
+   Isi track diduplikat 2× di JS — saat translateX mencapai -50%
+   (tepat setengah total lebar) animasi loop ulang dari awal.
+   Karena CSS animation mulai dari translateX(0) = posisi kiri,
+   kita set initial offset +100% via JS saat build, lalu geser ke 50%.
+   Dengan cara ini kartu PERTAMA muncul dari KANAN layar. */
 @keyframes marqueeScroll {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); } /* -50% karena isi diduplikat 2x */
+  from { transform: translateX(0); }       /* mulai dari offset yg di-set JS */
+  to   { transform: translateX(-50%); }    /* loop seamless ke salinan berikutnya */
 }
-/* State animasi: dikendalikan via JS pause/play */
-#marqueeTrack.running  { animation: marqueeScroll 22s linear infinite; }  /* 22s = kecepatan optimal */
-#marqueeTrack.paused   { animation-play-state: paused; }
 
-/* Satu item dalam marquee */
+/* Container: overflow hidden agar kartu tidak bocor ke luar */
+#marqueeWrap {
+  overflow: hidden;
+  /* mask fade kiri-kanan: kartu masuk/keluar terasa natural */
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+  mask-image:         linear-gradient(to right, transparent 0%, black 6%, black 94%, transparent 100%);
+}
+
+/* Track: will-change + backface untuk performa GPU smooth */
+#marqueeTrack {
+  will-change: transform;
+  backface-visibility: hidden;
+  display: inline-flex;          /* flex agar kartu 1:1 bisa berjajar */
+  gap: 1rem;
+  align-items: flex-start;
+  white-space: nowrap;
+}
+
+/* State animasi — dikendalikan JS classList */
+#marqueeTrack.running { animation: marqueeScroll 26s linear infinite; } /* 26s = tempo baca nyaman */
+#marqueeTrack.paused  { animation-play-state: paused; }
+
+/* Pause saat hover — beri user waktu membaca */
+#marqueeWrap:hover #marqueeTrack { animation-play-state: paused; }
+
+/* ── Kartu pesan 1:1 (persegi) dalam marquee ────────────────────────
+   Layout vertikal: [avatar + nama] di atas, email kecil, pesan di tengah */
 .marquee-item {
-  display: inline-flex; align-items: center; gap: 0.6rem;
-  border: 1px solid rgba(0,212,255,0.15);
-  background: rgba(5,15,30,0.6);
-  border-radius: 6px; padding: 0.45rem 0.9rem;
-  white-space: nowrap; flex-shrink: 0;
+  display: inline-flex;
+  flex-direction: column;             /* susun vertikal */
+  flex-shrink: 0;
+  width: 160px; height: 160px;        /* 1:1 persegi */
+  padding: 0.75rem;
+  gap: 0.3rem;
+  border: 1px solid rgba(0,212,255,0.18);
+  background: rgba(5,15,30,0.65);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  vertical-align: top;
+  white-space: normal;                /* izinkan teks wrap di dalam kartu */
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.marquee-item:hover { border-color: rgba(0,212,255,0.4); box-shadow: 0 0 18px rgba(0,212,255,0.1); }
+
+/* Baris atas: avatar lingkaran + nama di sampingnya */
+.marquee-item-header {
+  display: flex; align-items: center; gap: 0.45rem;
+  flex-shrink: 0;
+}
+/* Avatar di kartu 1:1 — ukuran lebih besar dari sebelumnya */
+.marquee-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0,212,255,0.35);
+  display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+  font-family: 'Orbitron', sans-serif; font-size: 0.58rem; font-weight: 700; color: #fff;
 }
 .marquee-item-name {
-  font-family: 'Orbitron', sans-serif; font-size: 0.68rem; font-weight: 700; color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.64rem; font-weight: 700; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 90px;                    /* cegah nama terlalu panjang */
 }
-.marquee-item-msg  {
-  font-family: 'Rajdhani', sans-serif; font-size: 0.82rem; color: rgba(0,212,255,0.75);
+/* Email: font lebih kecil dari nama, warna lebih redup */
+.marquee-item-email {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.55rem; color: rgba(0,212,255,0.45);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex-shrink: 0;
 }
-/* Avatar kecil dalam marquee item */
-.marquee-avatar {
-  width: 22px; height: 22px; border-radius: 50%;
-  border: 1px solid rgba(0,212,255,0.3);
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden; flex-shrink: 0; font-size: 0.55rem;
-  font-family: 'Orbitron', sans-serif; font-weight: 700; color: #fff;
+/* Pesan: di tengah kartu, bisa 2 baris */
+.marquee-item-msg {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem; color: rgba(0,212,255,0.82);
+  line-height: 1.45;
+  flex: 1;                            /* ambil sisa ruang */
+  display: flex; align-items: center; /* center vertikal di sisa ruang */
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;              /* max 3 baris */
+  -webkit-box-orient: vertical;
 }
-/* Hover: pause marquee agar bisa baca */
+/* Garis dekoratif bawah */
+.marquee-item::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,212,255,0.25), transparent);
+}
+/* Hover pause — beri kesempatan user membaca */
 #marqueeWrap:hover #marqueeTrack { animation-play-state: paused; }
 
 /* Mode button aktif */
